@@ -36,6 +36,12 @@ class Game(object):
         self.tile_img = pygame.image.load(self.BG_TILE_IMG).convert_alpha()
         self.tile_img_rect = self.tile_img.get_rect()
         
+        # StartScreen added
+        self.start_screen = True
+        self.start_font = pygame.font.SysFont('comic sans', 36)
+        self.start_text = self.start_font.render('Press Enter to Start', True, pygame.Color('yellow'))
+        self.start_text_rect = self.start_text.get_rect(center=(self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2))
+
         #Drawing a handy MessageBoard widget
         #Can use these for any text.
         print("Configuring tboard MessageBoard params.")
@@ -199,59 +205,57 @@ class Game(object):
     def run(self):
         print("Beginning run sequence.")
         # The main game loop
-        #
         while True:
             # Limit frame speed to 30 FPS
-            #
             self.time_passed = self.clock.tick(30)
-            #~ time_passed = self.clock.tick()
-            #~ print time_passed
-            
+
             # If too long has passed between two frames, don't
             # update (the game must have been suspended for some
             # reason, and we don't want it to "jump forward"
             # suddenly)
-            #
             if self.time_passed > 100:
                 continue
-           
+
             active = False 
             for entry in self.textEntries:
                 if entry.clicked:
                     active = True
+
             #Event loop. In-game control is routed through here
-            #Will probably need something more robust soon.
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
-                elif event.type == pygame.KEYDOWN and not active:
-                    if event.key == pygame.K_SPACE:
-                        self.paused = not self.paused
-                    elif event.key == pygame.K_g:
-                        #toggle draw grid
-                        self.options['draw_grid'] = not self.options['draw_grid']
+                elif event.type == pygame.KEYDOWN:
+                    if self.start_screen and event.key == pygame.K_RETURN:
+                        self.start_screen = False
+                    elif not self.start_screen and not active:
+                        if event.key == pygame.K_SPACE:
+                            self.paused = not self.paused
+                        elif event.key == pygame.K_g:
+                            #toggle draw grid
+                            self.options['draw_grid'] = not self.options['draw_grid']
                 elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
-                    for button in self.buttons:
-                        button.mouse_click_event(event.pos)
-                    for entry in self.textEntries:
-                        entry.mouse_click_event(event.pos)
-            
-            #pass 	temporarily disabled, don't think it does anything
-            
-            #entity events here.
+                    if not self.start_screen:
+                        for button in self.buttons:
+                            button.mouse_click_event(event.pos)
+                        for entry in self.textEntries:
+                            entry.mouse_click_event(event.pos)
 
-            #update hud, counters, score, anything like that here
-            if not self.paused:
-                msg1 = ''
-                msg2 = ''
-                #update stats counters. Not doing anything yet
-                self.mboard_text = [msg1, msg2]
+            if self.start_screen:
+                self.screen.fill((0, 0, 0))
+                self.screen.blit(self.start_text, self.start_text_rect)
+            else:
+                if not self.paused:
+                    msg1 = ''
+                    msg2 = ''
+                    #update stats counters. Not doing anything yet
+                    self.mboard_text = [msg1, msg2]
 
-                #update entities with time passed for internal calculations
+                    #update entities with time passed for internal calculations
+                    self.draw()
 
-                self.draw()
-                #actually flip Surface buffer
-                pygame.display.flip()
+            #actually flip Surface buffer
+            pygame.display.flip()
 
     def quit(self):
         sys.exit()
